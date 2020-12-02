@@ -1,3 +1,6 @@
+# Author Yaoyao Bao
+# yaoyaobao@mail.ecust.edu.cn
+
 from abc import abstractmethod
 
 
