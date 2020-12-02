@@ -1,3 +1,6 @@
+# Author Yaoyao Bao
+# yaoyaobao@mail.ecust.edu.cn
+
 import numpy as np
 from sklearn.cluster import KMeans
 from src.feat_engineering.cluster.cluster_extract import ClusterExtract

@@ -1,8 +1,23 @@
+# Author Yaoyao Bao
+# yaoyaobao@mail.ecust.edu.cn
+
 from src.feat_engineering.feat_engineering_abstract import FeatEngineeringExtract
 import pandas as pd
 
 
 class ClusterExtract(FeatEngineeringExtract):
+    """
+    Cluster feat extract class
+    To find which cluster the sample belongs to, and encode it with one-hot form
+
+    Parameters
+    -------
+
+    agent_type: the name of class which has function <fit> and <transform>,
+                e.g. sklearn.cluster.KMeans, sklearn.cluster.SpectralClustering
+    init_params: the params that are used to initialize the agent
+
+    """
     def __init__(self, agent_type, **init_params):
         self.agent = agent_type(**init_params)
 
