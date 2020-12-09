@@ -1,11 +1,11 @@
-import numpy as np
+# Author Yaoyao Bao
+# yaoyaobao@mail.ecust.edu.cn
+
 import pandas as pd
-from sklearn.model_selection import KFold
 
 
-class ModelWithPreproces:
+class CrossValidation:
     def __init__(self, model_class, kfold, num_split):
-
         self.kfold = kfold                  # the KFold split class to split the data into several folds
         self.num_split = num_split          # number of folds
         self.model_class = model_class      # the class of the model
