@@ -31,8 +31,7 @@ class ModelWithPreproces:
             train_idx, val_idx = next(self.kfold(6).split(train_x, train_y))
             train_x, val_x = train_x.iloc[train_idx], train_x.index[val_idx]
             train_y, val_y = train_y.iloc[train_idx], train_y.index[val_idx]
-            train_grp, val_grp = model.get_dataset(train_x, val_y), model.get_dataset(val_x, val_y)
-            model.fit(train_grp, val_grp)
+            model.fit(train_x, train_y, val_x, val_y)
             # save the model
             self.trained_models.append(model)
             # oof estimation
@@ -55,8 +54,7 @@ class ModelWithPreproces:
             print("##################### Fold {} is running ... #####################".format(fold_idx))
             train_x, val_x = train_feat.iloc[train_idx], train_feat.iloc[test_idx]
             train_y, val_y = train_target.iloc[train_idx], train_target.iloc[test_idx]
-            train_grp, val_grp = model.get_dataset(train_x, val_y), model.get_dataset(val_x, val_y)
-            model.fit(train_grp, val_grp)
+            model.fit(train_x, train_y, val_x, val_y)
             # save the model
             self.trained_models.append(model)
         return None
