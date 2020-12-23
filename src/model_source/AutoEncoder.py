@@ -43,7 +43,7 @@ class AutoEncoderTraining(object):
     def fit(self, x_train, x_valid=-1,
             batch_size=128, num_epoch=25,
             lr=1e-3, weight_decay=0, lambda_l1=0,
-            early_stopping_steps=0):
+            early_stopping_steps=-1):
         # initialization of NN model
         self.__initialize_params()
         self.model.to(self.DEVICE)
@@ -59,12 +59,12 @@ class AutoEncoderTraining(object):
         for epoch in range(num_epoch):
             self.__train_fn(optimizer, train_loader, lambda_l1)
             if not x_valid == -1:
-                train_loss = self.__valid_fn(self.model, train_loader)
-                valid_loss = self.__valid_fn(self.model, valid_loader)
+                train_loss = self.__valid_fn(train_loader)
+                valid_loss = self.__valid_fn(valid_loader)
                 print('EPOCH: %d train_loss: %f' % (epoch, train_loss))
                 print('EPOCH: %d valid_loss: %f' % (epoch, valid_loss))
             else:
-                valid_loss = valid_fn(self.model, train_loader)
+                valid_loss = self.__valid_fn(train_loader)
                 print('EPOCH: %d train_loss: %f' %(epoch, valid_loss))
             if valid_loss < best_loss:
                 best_loss = valid_loss
@@ -79,8 +79,8 @@ class AutoEncoderTraining(object):
         self.model.eval()
         with torch.no_grad():
             encoded, decoded = self.model(test_data)
-        encoded = np.concatenate(encoded.detach().cpu().numpy())
-        decoded = np.concatenate(decoded.detach().cpu().numpy())
+        encoded = encoded.detach().cpu().numpy()
+        decoded = decoded.detach().cpu().numpy()
         return encoded, decoded
 
     def __train_fn(self, optimizer, data_loader, lambda_l1):
@@ -97,6 +97,7 @@ class AutoEncoderTraining(object):
                 loss = self.loss_fn(outputs, targets) + lambda_l1*l1_loss
             else:
                 loss = self.loss_fn(outputs, targets)
+            loss.backward()
             optimizer.step()
 
     def __valid_fn(self, data_loader):
@@ -122,15 +123,3 @@ class AutoEncoderTraining(object):
         dataset = torch.utils.data.TensorDataset(x_tensor, y_tensor)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
         return data_loader
-
-
-
-
-
-
-
-
-
-
-
-
