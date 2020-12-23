@@ -53,12 +53,12 @@ class AutoEncoderTraining(object):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
         # generation data loader
         train_loader = self.__data_generation(x_train, x_train, batch_size, shuffle=True)
-        if not x_valid == -1:
+        if not len(x_valid) == 1:
             valid_loader = self.__data_generation(x_valid, x_valid, batch_size, shuffle=True)
         # epoch iteration
         for epoch in range(num_epoch):
             self.__train_fn(optimizer, train_loader, lambda_l1)
-            if not x_valid == -1:
+            if not len(x_valid) == 1:
                 train_loss = self.__valid_fn(train_loader)
                 valid_loss = self.__valid_fn(valid_loader)
                 print('EPOCH: %d train_loss: %f' % (epoch, train_loss))
