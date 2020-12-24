@@ -50,7 +50,7 @@ class AutoEncoderTraining(object):
         self.model.to(self.DEVICE)
         early_step = 0
         best_loss = np.inf
-        beat_model_params = self.model.state_dict()
+        best_model_params = self.model.state_dict()
         # definition optimizer
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
         # generation data loader
@@ -71,12 +71,12 @@ class AutoEncoderTraining(object):
             if valid_loss < best_loss:
                 best_loss = valid_loss
                 early_step = 0
-                beat_model_params = copy.deepcopy(self.model.state_dict())
+                best_model_params = copy.deepcopy(self.model.state_dict())
             elif early_stopping_steps != -1:
                 early_step += 1
                 if early_step >= early_stopping_steps:
                     break
-        self.model.load_state_dict(beat_model_params)
+        self.model.load_state_dict(best_model_params)
 
     def predict(self, test_data):
         test_data = torch.tensor(test_data, dtype=torch.float)
