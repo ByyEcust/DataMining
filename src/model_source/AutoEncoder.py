@@ -80,6 +80,7 @@ class AutoEncoderTraining(object):
 
     def predict(self, test_data):
         test_data = torch.tensor(test_data, dtype=torch.float)
+        test_data = test_data.to(self.DEVICE)
         self.model.eval()
         with torch.no_grad():
             encoded, decoded = self.model(test_data)
