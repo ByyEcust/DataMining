@@ -107,12 +107,13 @@ class AutoEncoderTraining(object):
     def __valid_fn(self, data_loader):
         self.model.eval()
         final_loss = 0
-        for inputs, targets in data_loader:
-            inputs, targets = inputs.to(self.DEVICE), targets.to(self.DEVICE)
-            _, outputs = self.model(inputs)
-            loss = self.loss_fn(outputs, targets)
-            final_loss += loss.item()
-        final_loss /= len(data_loader)
+        with torch.no_grad():
+            for inputs, targets in data_loader:
+                inputs, targets = inputs.to(self.DEVICE), targets.to(self.DEVICE)
+                _, outputs = self.model(inputs)
+                loss = self.loss_fn(outputs, targets)
+                final_loss += loss.item()
+            final_loss /= len(data_loader)
         return final_loss
 
     def __initialize_params(self):
