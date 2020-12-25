@@ -1,10 +1,10 @@
-'''
+"""
 Auto Encoder based on Pytorch
-methods:
-    * fit: main iteration of epochs
-    * predict:
+*** Demo and simple examples of naive Auto-Encoder Pytorch Structure
+    class AutoEncoder: An example of auto-encoder pytorch class
+    class AutoEncoderTraining: class of auto-encoder training framework
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2020.12.05
-'''
+"""
 import copy
 
 import numpy as np
@@ -45,12 +45,13 @@ class AutoEncoderTraining(object):
             batch_size=128, num_epoch=25,
             lr=1e-3, weight_decay=0, lambda_l1=0,
             early_stopping_steps=-1):
-        # initialization of NN model
-        self.__initialize_params()
-        self.model.to(self.DEVICE)
+        # initialize
         early_step = 0
         best_loss = np.inf
         best_model_params = self.model.state_dict()
+        self.__initialize_params(self.model.encoder)
+        self.__initialize_params(self.model.decoder)
+        self.model.to(self.DEVICE)
         # definition optimizer
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
         # generation data loader
@@ -117,11 +118,17 @@ class AutoEncoderTraining(object):
             final_loss /= len(data_loader)
         return final_loss
 
-    def __initialize_params(self):
-        for layer in self.model.encoder:
+    @staticmethod
+    def __initialize_params(layers):
+        for layer in layers:
             if isinstance(layer, nn.Linear):
                 nn.init.kaiming_normal_(layer.weight)
                 nn.init.constant_(layer.bias, 0.)
+            elif isinstance(layer, nn.BatchNorm1d):
+                nn.init.constant_(layer.weight, 1.)
+                nn.init.constant_(layer.bias, 0.)
+                nn.init.constant_(layer.running_mean, 0.)
+                nn.init.constant_(layer.running_var, 1.)
 
     @staticmethod
     def __l1_loss(model):

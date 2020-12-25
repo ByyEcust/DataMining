@@ -1,7 +1,7 @@
-'''
+"""
 This is a test file and a quick start of Auto-Encoder based on pytorch
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2020.12.23
-'''
+"""
 
 from src.model_source.AutoEncoder import AutoEncoder, AutoEncoderTraining
 import torch
