@@ -26,5 +26,5 @@ auto_encoder.fit(x_train=df_train.values, x_valid=df_valid.values)
 encoded, decoded = auto_encoder.predict(df_valid.values)
 
 # model saving
-auto_encoder.save()
+# auto_encoder.save()
 

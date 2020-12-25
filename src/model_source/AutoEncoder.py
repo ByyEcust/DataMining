@@ -56,8 +56,10 @@ class AutoEncoderTraining(object):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
         # generation data loader
         train_loader = self.__data_generation(x_train, x_train, batch_size, shuffle=True)
+        print('+++ initial loss of train data: ' + str(self.__initial_loss(x_train)))
         if x_valid is not None:
             valid_loader = self.__data_generation(x_valid, x_valid, batch_size, shuffle=True)
+            print('+++ initial loss of valid data: ' + str(self.__initial_loss(x_valid)))
         # epoch iteration
         for epoch in range(num_epoch):
             self.__train_fn(optimizer, train_loader, lambda_l1)
@@ -80,6 +82,7 @@ class AutoEncoderTraining(object):
         self.model.load_state_dict(best_model_params)
 
     def predict(self, test_data):
+        print('+++ initial loss of prediction data: ' + str(self.__initial_loss(test_data)))
         test_data = torch.tensor(test_data, dtype=torch.float)
         test_data = test_data.to(self.DEVICE)
         self.model.eval()
@@ -118,6 +121,15 @@ class AutoEncoderTraining(object):
             final_loss /= len(data_loader)
         return final_loss
 
+    def __initial_loss(self, data):
+        data_mean = np.mean(data, axis=0)
+        data = np.tile(data_mean, data.shape[0]).reshape(data.shape[0], data.shape[1])
+        data_tensor = torch.Tensor(data)
+        with torch.no_grad():
+            _, data_decoded = self.model(data_tensor)
+            initial_loss = self.loss_fn(data_decoded, data_tensor)
+        return initial_loss.item()
+
     @staticmethod
     def __initialize_params(layers):
         for layer in layers:
@@ -144,3 +156,6 @@ class AutoEncoderTraining(object):
         dataset = torch.utils.data.TensorDataset(x_tensor, y_tensor)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
         return data_loader
+
+
+
