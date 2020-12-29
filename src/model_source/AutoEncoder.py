@@ -123,11 +123,10 @@ class AutoEncoderTraining(object):
 
     def __initial_loss(self, data):
         data_mean = np.mean(data, axis=0)
-        data = np.tile(data_mean, data.shape[0]).reshape(data.shape[0], data.shape[1])
+        data_predict = np.tile(data_mean, data.shape[0]).reshape(data.shape[0], data.shape[1])
+        data_predict_tensor = torch.Tensor(data_predict)
         data_tensor = torch.Tensor(data)
-        with torch.no_grad():
-            _, data_decoded = self.model(data_tensor)
-            initial_loss = self.loss_fn(data_decoded, data_tensor)
+        initial_loss = self.loss_fn(data_predict_tensor, data_tensor)
         return initial_loss.item()
 
     @staticmethod
