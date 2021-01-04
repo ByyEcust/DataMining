@@ -52,8 +52,9 @@ class AutoEncoderTraining(object):
         self.__initialize_params(self.model.encoder)
         self.__initialize_params(self.model.decoder)
         self.model.to(self.DEVICE)
-        # definition optimizer
+        # definition optimizer and scheduler
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2)
         # generation data loader
         train_loader = self.__data_generation(x_train, x_train, batch_size, shuffle=True)
         print('+++ initial loss of train data: ' + str(self.__initial_loss(x_train)))
@@ -70,6 +71,7 @@ class AutoEncoderTraining(object):
                 print('EPOCH: %d valid_loss: %f' % (epoch, valid_loss))
             else:
                 valid_loss = train_loss
+            scheduler.step(valid_loss)
             # early-stopping
             if valid_loss < best_loss:
                 best_loss = valid_loss
