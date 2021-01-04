@@ -37,6 +37,7 @@ class FNN(object):
         self.model.to(self.DEVICE)
         # define optimizer
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2)
         # generation of data loader
         train_loader = self.__data_generation(x_train, y_train, batch_size=batch_size, shuffle=True)
         if x_valid is not None:
@@ -51,6 +52,7 @@ class FNN(object):
                 print('EPOCH: %d valid_loss: %f' % (epoch, valid_loss))
             else:
                 valid_loss = train_loss
+            scheduler.step(valid_loss)
             # early stopping
             if valid_loss < best_loss:
                 best_loss = valid_loss
