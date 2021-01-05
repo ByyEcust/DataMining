@@ -13,11 +13,16 @@ class LR(nn.Module):
     def __init__(self, dim_features):
         super(LR, self).__init__()
         self.linear_weight = nn.Linear(dim_features, 1, bias=True)
+        self.__initialize_params()
 
     def forward(self, x):
         output = self.linear_weight(x)
         output = nn.functional.sigmoid(output)
         return output
+
+    def __initialize_params(self):
+        nn.init.normal_(self.linear_weight.weight, 0.0, 1.0)
+        nn.init.constant_(self.linear_weight.bias, 0.0)
 
 
 # the basic FM calculating framework based on pyTorch
@@ -26,6 +31,7 @@ class FM(nn.Module):
         super(FM, self).__init__()
         self.linear_weight = nn.Linear(dim_features, 1, bias=True)
         self.embedding_vec = nn.Parameter(torch.randn(dim_features, dim_embedding))
+        self.__initialize_params()
 
     def forward(self, x):
         # X * W
@@ -38,6 +44,10 @@ class FM(nn.Module):
         output = linear_part + 0.5*torch.sum(cross_part_1 - cross_part_2)
         output = nn.functional.sigmoid(output)
         return output
+
+    def __initialize_params(self):
+        nn.init.normal_(self.linear_weight.weight, 0.0, 1.0)
+        nn.init.constant_(self.linear_weight.bias, 0.0)
 
 
 
