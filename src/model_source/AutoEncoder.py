@@ -1,10 +1,10 @@
-'''
+"""
 Auto Encoder based on Pytorch
-methods:
-    * fit: main iteration of epochs
-    * predict:
+*** Demo and simple examples of naive Auto-Encoder Pytorch Structure
+    class AutoEncoder: An example of auto-encoder pytorch class
+    class AutoEncoderTraining: class of auto-encoder training framework
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2020.12.05
-'''
+"""
 import copy
 
 import numpy as np
@@ -27,11 +27,23 @@ class AutoEncoder(nn.Module):
             nn.ReLU(),
             nn.Linear(128, num_features),
             nn.Sigmoid())
+        self.__initialize_params()
 
     def forward(self, x):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return encoded, decoded
+
+    def __initialize_params(self):
+        for layer in self.parameters():
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight)
+                nn.init.constant_(layer.bias, 0.)
+            elif isinstance(layer, nn.BatchNorm1d):
+                nn.init.constant_(layer.weight, 1.)
+                nn.init.constant_(layer.bias, 0.)
+                nn.init.constant_(layer.running_mean, 0.)
+                nn.init.constant_(layer.running_var, 1.)
 
 
 # class of auto encoder training framework
@@ -45,19 +57,21 @@ class AutoEncoderTraining(object):
             batch_size=128, num_epoch=25,
             lr=1e-3, weight_decay=0, lambda_l1=0,
             early_stopping_steps=-1):
-        # initialization of NN model
-        self.__initialize_params()
-        self.model.to(self.DEVICE)
+        # initialize
         early_step = 0
         best_loss = np.inf
-        best_model_params = self.model.state_dict()
-        # definition optimizer
+        self.model.to(self.DEVICE)
+        # definition optimizer and scheduler
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2)
         # generation data loader
         train_loader = self.__data_generation(x_train, x_train, batch_size, shuffle=True)
+        print('+++ initial loss of train data: ' + str(self.__initial_loss(x_train)))
         if x_valid is not None:
             valid_loader = self.__data_generation(x_valid, x_valid, batch_size, shuffle=True)
+            print('+++ initial loss of valid data: ' + str(self.__initial_loss(x_valid)))
         # epoch iteration
+        best_model_params = copy.deepcopy(self.model.state_dict())
         for epoch in range(num_epoch):
             self.__train_fn(optimizer, train_loader, lambda_l1)
             train_loss = self.__valid_fn(train_loader)
@@ -67,6 +81,7 @@ class AutoEncoderTraining(object):
                 print('EPOCH: %d valid_loss: %f' % (epoch, valid_loss))
             else:
                 valid_loss = train_loss
+            scheduler.step(valid_loss)
             # early-stopping
             if valid_loss < best_loss:
                 best_loss = valid_loss
@@ -79,6 +94,7 @@ class AutoEncoderTraining(object):
         self.model.load_state_dict(best_model_params)
 
     def predict(self, test_data):
+        print('+++ initial loss of prediction data: ' + str(self.__initial_loss(test_data)))
         test_data = torch.tensor(test_data, dtype=torch.float)
         test_data = test_data.to(self.DEVICE)
         self.model.eval()
@@ -117,11 +133,13 @@ class AutoEncoderTraining(object):
             final_loss /= len(data_loader)
         return final_loss
 
-    def __initialize_params(self):
-        for layer in self.model.encoder:
-            if isinstance(layer, nn.Linear):
-                nn.init.kaiming_normal_(layer.weight)
-                nn.init.constant_(layer.bias, 0.)
+    def __initial_loss(self, data):
+        data_mean = np.mean(data, axis=0)
+        data_predict = np.tile(data_mean, data.shape[0]).reshape(data.shape[0], data.shape[1])
+        data_predict_tensor = torch.Tensor(data_predict)
+        data_tensor = torch.Tensor(data)
+        initial_loss = self.loss_fn(data_predict_tensor, data_tensor)
+        return initial_loss.item()
 
     @staticmethod
     def __l1_loss(model):
@@ -137,3 +155,6 @@ class AutoEncoderTraining(object):
         dataset = torch.utils.data.TensorDataset(x_tensor, y_tensor)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
         return data_loader
+
+
+

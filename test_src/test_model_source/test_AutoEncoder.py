@@ -1,7 +1,7 @@
-'''
+"""
 This is a test file and a quick start of Auto-Encoder based on pytorch
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2020.12.23
-'''
+"""
 
 from src.model_source.AutoEncoder import AutoEncoder, AutoEncoderTraining
 import torch
@@ -26,5 +26,5 @@ auto_encoder.fit(x_train=df_train.values, x_valid=df_valid.values)
 encoded, decoded = auto_encoder.predict(df_valid.values)
 
 # model saving
-auto_encoder.save()
+# auto_encoder.save()
 
