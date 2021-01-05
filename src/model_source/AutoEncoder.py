@@ -29,9 +29,21 @@ class AutoEncoder(nn.Module):
             nn.Sigmoid())
 
     def forward(self, x):
+        self.__initialize_params()
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return encoded, decoded
+
+    def __initialize_params(self):
+        for layer in self.parameters():
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight)
+                nn.init.constant_(layer.bias, 0.)
+            elif isinstance(layer, nn.BatchNorm1d):
+                nn.init.constant_(layer.weight, 1.)
+                nn.init.constant_(layer.bias, 0.)
+                nn.init.constant_(layer.running_mean, 0.)
+                nn.init.constant_(layer.running_var, 1.)
 
 
 # class of auto encoder training framework
@@ -48,9 +60,6 @@ class AutoEncoderTraining(object):
         # initialize
         early_step = 0
         best_loss = np.inf
-        best_model_params = self.model.state_dict()
-        self.__initialize_params(self.model.encoder)
-        self.__initialize_params(self.model.decoder)
         self.model.to(self.DEVICE)
         # definition optimizer and scheduler
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
@@ -62,6 +71,7 @@ class AutoEncoderTraining(object):
             valid_loader = self.__data_generation(x_valid, x_valid, batch_size, shuffle=True)
             print('+++ initial loss of valid data: ' + str(self.__initial_loss(x_valid)))
         # epoch iteration
+        best_model_params = self.model.state_dict()
         for epoch in range(num_epoch):
             self.__train_fn(optimizer, train_loader, lambda_l1)
             train_loss = self.__valid_fn(train_loader)
@@ -130,18 +140,6 @@ class AutoEncoderTraining(object):
         data_tensor = torch.Tensor(data)
         initial_loss = self.loss_fn(data_predict_tensor, data_tensor)
         return initial_loss.item()
-
-    @staticmethod
-    def __initialize_params(layers):
-        for layer in layers:
-            if isinstance(layer, nn.Linear):
-                nn.init.kaiming_normal_(layer.weight)
-                nn.init.constant_(layer.bias, 0.)
-            elif isinstance(layer, nn.BatchNorm1d):
-                nn.init.constant_(layer.weight, 1.)
-                nn.init.constant_(layer.bias, 0.)
-                nn.init.constant_(layer.running_mean, 0.)
-                nn.init.constant_(layer.running_var, 1.)
 
     @staticmethod
     def __l1_loss(model):
