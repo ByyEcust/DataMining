@@ -27,9 +27,9 @@ class AutoEncoder(nn.Module):
             nn.ReLU(),
             nn.Linear(128, num_features),
             nn.Sigmoid())
+        self.__initialize_params()
 
     def forward(self, x):
-        self.__initialize_params()
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return encoded, decoded
@@ -71,7 +71,7 @@ class AutoEncoderTraining(object):
             valid_loader = self.__data_generation(x_valid, x_valid, batch_size, shuffle=True)
             print('+++ initial loss of valid data: ' + str(self.__initial_loss(x_valid)))
         # epoch iteration
-        best_model_params = self.model.state_dict()
+        best_model_params = copy.deepcopy(self.model.state_dict())
         for epoch in range(num_epoch):
             self.__train_fn(optimizer, train_loader, lambda_l1)
             train_loss = self.__valid_fn(train_loader)
