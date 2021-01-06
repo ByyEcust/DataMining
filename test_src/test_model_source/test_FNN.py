@@ -22,10 +22,9 @@ fnn_model.fit(x_train=x_train, y_train=y_train, x_valid=x_valid, y_valid=y_valid
 
 # prediction
 valid_pre = fnn_model.predict(x_valid)
-print(valid_pre[:5])
 
 # model saving
-fnn_model.save('test_model')
+# fnn_model.save('test_model')
 
 
 

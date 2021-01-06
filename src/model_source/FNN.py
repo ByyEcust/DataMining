@@ -30,18 +30,16 @@ class FNN(object):
         # initialize
         early_step = 0
         best_loss = np.inf
-        best_model_params = self.model.state_dict()
-        self.__initialize_params(self.model.input_layer)
-        self.__initialize_params(self.model.hidden_layer)
-        self.__initialize_params(self.model.output_layer)
         self.model.to(self.DEVICE)
         # define optimizer
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-8)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2)
         # generation of data loader
         train_loader = self.__data_generation(x_train, y_train, batch_size=batch_size, shuffle=True)
         if x_valid is not None:
             valid_loader = self.__data_generation(x_valid, y_valid, batch_size=batch_size, shuffle=False)
         # epoch iteration
+        best_model_params = copy.deepcopy(self.model.state_dict())
         for epoch in range(epochs):
             self.__train_fn__(optimizer, train_loader, lambda_l1)
             train_loss = self.__valid_fn__(train_loader)
@@ -51,6 +49,7 @@ class FNN(object):
                 print('EPOCH: %d valid_loss: %f' % (epoch, valid_loss))
             else:
                 valid_loss = train_loss
+            scheduler.step(valid_loss)
             # early stopping
             if valid_loss < best_loss:
                 best_loss = valid_loss
@@ -63,9 +62,11 @@ class FNN(object):
         self.model.load_state_dict(best_model_params)
 
     def predict(self, test_data):
+        # avoid lack of RAM in cuda device
+        self.model.to('cpu')
         self.model.eval()
         test_data = torch.Tensor(test_data)
-        test_data = test_data.to(self.DEVICE)
+        test_data = test_data.to('cpu')
         with torch.no_grad():
             output = self.model(test_data)
         output = output.detach().cpu().numpy()
@@ -97,18 +98,6 @@ class FNN(object):
                 final_loss += loss.item()
             final_loss /= len(data_loader)
         return final_loss
-
-    @staticmethod
-    def __initialize_params(layers):
-        for layer in layers:
-            if isinstance(layer, nn.Linear):
-                nn.init.kaiming_normal_(layer.weight)
-                nn.init.constant_(layer.bias, 0.)
-            elif isinstance(layer, nn.BatchNorm1d):
-                nn.init.constant_(layer.weight, 1.)
-                nn.init.constant_(layer.bias, 0.)
-                nn.init.constant_(layer.running_mean, 0.)
-                nn.init.constant_(layer.running_var, 1.)
 
     @staticmethod
     def __l1_loss(model):
@@ -145,12 +134,24 @@ class FnnModel(nn.Module):
             nn.Linear(hidden_size, num_outputs),
             nn.Dropout(0.10),
             nn.Sigmoid())
+        self.__initialize_params()
 
     def forward(self, inputs):
         inputs = self.input_layer(inputs)
         inputs = self.hidden_layer(inputs)
         outputs = self.output_layer(inputs)
         return outputs
+
+    def __initialize_params(self):
+        for layer in self.parameters():
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight)
+                nn.init.constant_(layer.bias, 0.)
+            elif isinstance(layer, nn.BatchNorm1d):
+                nn.init.constant_(layer.weight, 1.)
+                nn.init.constant_(layer.bias, 0.)
+                nn.init.constant_(layer.running_mean, 0.)
+                nn.init.constant_(layer.running_var, 1.)
 
 
 # An simple example of FNN with multi-inputs and embedding layers (input-embedding-hidden-output)
@@ -176,6 +177,7 @@ class FnnModelMultiInputs(nn.Module):
             nn.Dropout(0.20),
             nn.ReLU(),
             nn.Sigmoid())
+        self.__initialize_params()
 
     def forward(self, inputs_1, inputs_2):
         emb_1 = self.embedding_1(inputs_1)
@@ -184,3 +186,14 @@ class FnnModelMultiInputs(nn.Module):
         inputs = self.hidden_layer(emb)
         outputs = self.output_layer(inputs)
         return outputs
+
+    def __initialize_params(self):
+        for layer in self.parameters():
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight)
+                nn.init.constant_(layer.bias, 0.)
+            elif isinstance(layer, nn.BatchNorm1d):
+                nn.init.constant_(layer.weight, 1.)
+                nn.init.constant_(layer.bias, 0.)
+                nn.init.constant_(layer.running_mean, 0.)
+                nn.init.constant_(layer.running_var, 1.)
