@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 
 
-# the basic LR
+# the basic LR model built by pyTorch
 class LR(nn.Module):
     def __init__(self, dim_features):
         super(LR, self).__init__()
@@ -25,7 +25,7 @@ class LR(nn.Module):
         nn.init.constant_(self.linear_weight.bias, 0.0)
 
 
-# the basic FM calculating framework based on pyTorch
+# the basic FM model built by pyTorch
 class FM(nn.Module):
     def __init__(self, dim_features, dim_embedding):
         super(FM, self).__init__()
@@ -48,6 +48,3 @@ class FM(nn.Module):
     def __initialize_params(self):
         nn.init.normal_(self.linear_weight.weight, 0.0, 1.0)
         nn.init.constant_(self.linear_weight.bias, 0.0)
-
-
-
