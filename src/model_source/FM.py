@@ -45,7 +45,7 @@ class FM(nn.Module):
         # (X^2 * V^2)
         cross_part_2 = torch.mm(torch.pow(x, 2), torch.pow(self.embedding_vec, 2))
         # output
-        output = linear_part + 0.5*torch.sum(cross_part_1 - cross_part_2)
+        output = linear_part + 0.5*(cross_part_1 - cross_part_2).sum(1).unsqueeze(1)
         output = torch.sigmoid(output)
         output = output.squeeze(-1)
         return output

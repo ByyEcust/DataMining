@@ -27,27 +27,31 @@ x_valid = scaler.transform(x_valid)
 
 # model definition
 lr_model_ = LR(dim_features=x_train.shape[1])
-fm_model_ = FM(dim_features=x_train.shape[1], dim_embedding=1)
+fm_model_ = FM(dim_features=x_train.shape[1], dim_embedding=5)
 
 # training framework definition
 lr_model = FNN(model=lr_model_, loss_fn=nn.BCELoss())
 fm_model = FNN(model=fm_model_, loss_fn=nn.BCELoss())
 
 # training
-
 lr_model.fit(x_train=x_train, y_train=y_train,
              x_valid=x_valid, y_valid=y_valid,
              lr=1e-1, batch_size=256)
 
-"""
 fm_model.fit(x_train=x_train, y_train=y_train,
              x_valid=x_valid, y_valid=y_valid,
-             lr=0.1, batch_size=256)
-"""
+             lr=1e-1, batch_size=256,
+             epochs=50, early_stopping_steps=10)
 
 # prediction
 y_train_pre = lr_model.predict(x_train)
 y_valid_pre = lr_model.predict(x_valid)
+print('+++ results of LR +++')
+print('the AUC of train: %f' %(roc_auc_score(y_train, y_train_pre)))
+print('the AUC of test: %f' %(roc_auc_score(y_valid, y_valid_pre)))
+y_train_pre = fm_model.predict(x_train)
+y_valid_pre = fm_model.predict(x_valid)
+print('+++ results of FM +++')
 print('the AUC of train: %f' %(roc_auc_score(y_train, y_train_pre)))
 print('the AUC of test: %f' %(roc_auc_score(y_valid, y_valid_pre)))
 
