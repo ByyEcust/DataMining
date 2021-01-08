@@ -3,8 +3,6 @@ Target encoding for categorical features (so called likelihood encoding and mean
 The main methods in class TargetEncoding are same as sklearn: fit / transform / fit_transform
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2021.01.07
 """
-import copy
-
 import numpy as np
 from sklearn.model_selection import KFold
 
@@ -20,18 +18,18 @@ class TargetEncoding(object):
         outer_target_dict = self.__target_dict_generation(feat_data)
         for NFold, (outer_train_idx, outer_test_idx) in enumerate(self.outer_fold.split(feat_data)):
             # outer in-fold
-            outer_if_feat = copy.deepcopy(feat_data[outer_train_idx])
-            outer_if_label = copy.deepcopy(label[outer_train_idx])
+            outer_if_feat = feat_data[outer_train_idx]
+            outer_if_label = label[outer_train_idx]
             # outer out-of-fold
-            outer_oof_feat = copy.deepcopy(feat_data[outer_test_idx])
+            outer_oof_feat = feat_data[outer_test_idx]
             # +++ inner K-Fold loop +++
             inner_target_dict = self.__target_dict_generation(feat_data)
             for inner_train_idx, inner_test_idx in self.inner_fold.split(outer_if_feat):
                 # inner in-fold
-                inner_if_feat = copy.deepcopy(outer_if_feat[inner_train_idx])
-                inner_if_label = copy.deepcopy(outer_if_label[inner_train_idx])
+                inner_if_feat = outer_if_feat[inner_train_idx]
+                inner_if_label = outer_if_label[inner_train_idx]
                 # inner out-of-fold
-                inner_oof_feat = copy.deepcopy(outer_if_feat[inner_test_idx])
+                inner_oof_feat = outer_if_feat[inner_test_idx]
                 # calculating inner target scores
                 target_dict = self.__target_score_calculation(inner_oof_feat, inner_if_feat,
                                                               inner_if_label, inner_target_dict)
