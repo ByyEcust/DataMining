@@ -1,5 +1,6 @@
 """
 Target encoding for categorical features (so called likelihood encoding and mean encoding)
+The main methods in class TargetEncoding are same as sklearn: fit / transform / fit_transform
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2021.01.07
 """
 import copy
@@ -54,14 +55,12 @@ class TargetEncoding(object):
         return label_pre
 
     @staticmethod
+    # generating a dict to save the results of each class in the categorical feature
     def __target_dict_generation(data):
-        target_class = np.unique(data)
-        target_dict = {}
-        for target in target_class:
-            target_dict[target] = []
-        return target_dict
+        return {c: [] for c in np.unique(data)}
 
     @staticmethod
+    # calculating mean value of labels to each relative class of categorical feature
     def __target_score_calculation(feat_data_oof, feat_data_if, label_if, target_dict):
         target_class = np.unique(feat_data_oof)
         for target in target_class:
@@ -70,8 +69,7 @@ class TargetEncoding(object):
         return target_dict
 
     @staticmethod
+    # encoding each class in categorical feature by the dict obtained by func: __target_score_calculation
     def __dict_2_label(target_dict, feat_data):
-        label_encoded = []
-        for i in range(len(feat_data)):
-            label_encoded.append(np.mean(target_dict[feat_data[i]]))
-        return np.array(label_encoded)
+        map_dict = {key: np.mean(value) for key, value in target_dict.items()}
+        return np.array([map_dict[x] for x in feat_data])
