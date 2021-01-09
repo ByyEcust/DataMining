@@ -14,7 +14,13 @@ class TargetEncoding(object):
         self.map_dict = {}
 
     def fit(self, feat_data, label):  # feat_data must be a vector contains categorical features
-        # +++ outer K-Fold loop +++
+        """
+        对feat_data中的类别按照其相应的label进行打分，并返回feat_data其相应的得分
+        :param feat_data: 类别特征, (n, )
+        :param label: 得分标签， (n, )
+        :return: feat_data的打分结果， (n, )
+        """
+        encoding_res = np.zeros(feat_data.shape)       # 拟合预测的结果
         outer_target_dict = {c: [] for c in np.unique(feat_data)}
         for NFold, (outer_train_idx, outer_test_idx) in enumerate(self.outer_fold.split(feat_data)):
             # outer in-fold & out-of-fold
@@ -28,17 +34,21 @@ class TargetEncoding(object):
             target_dict.update(_avg_score_for_cls(outer_if_feat, outer_if_label_pre))   # 根据outer_if_label_pre中的数据对其更新
             for k, v in target_dict.items():
                 outer_target_dict[k].append(v)
+
+            # record encoding result
+            encoding_res[outer_test_idx] = np.array([target_dict[c] for c in outer_oof_feat])
             print('the %d th outer fold has been finished' % NFold)
+
         # updating target dict to whole feat data
         self.map_dict = {k: np.mean(val) for k, val in outer_target_dict.items()}
+        return encoding_res
 
     def transform(self, feat_data):
         label_pre = np.array([self.map_dict[c] for c in feat_data])
         return label_pre
 
     def fit_transform(self, feat_data, label):
-        self.fit(feat_data, label)
-        label_pre = self.transform(feat_data)
+        label_pre = self.fit(feat_data, label)
         return label_pre
 
 
