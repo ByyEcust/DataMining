@@ -13,11 +13,12 @@ class TargetEncoding(object):
         self.inner_fold = KFold(n_splits=num_inner_folds, random_state=random_seed, shuffle=True)
         self.map_dict = {}
 
-    def fit(self, feat_data, label):  # feat_data must be a vector contains categorical features
+    def fit(self, feat_data, label, avg_flag=False):  # feat_data must be a vector contains categorical features
         """
         对feat_data中的类别按照其相应的label进行打分，并返回feat_data其相应的得分
         :param feat_data: 类别特征, (n, )
         :param label: 得分标签， (n, )
+        :param avg_flag: 是否对多折结果取均值
         :return: feat_data的打分结果， (n, )
         """
         encoding_res = np.zeros(feat_data.shape)       # 拟合预测的结果
@@ -41,7 +42,10 @@ class TargetEncoding(object):
 
         # updating target dict to whole feat data
         self.map_dict = {k: np.mean(val) for k, val in outer_target_dict.items()}
-        return encoding_res
+        if avg_flag is True:
+            return self.transform(feat_data)
+        else:
+            return encoding_res
 
     def transform(self, feat_data):
         label_pre = np.array([self.map_dict[c] for c in feat_data])
