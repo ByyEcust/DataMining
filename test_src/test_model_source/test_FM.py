@@ -54,4 +54,3 @@ y_valid_pre = fm_model.predict(x_valid)
 print('+++ results of FM +++')
 print('the AUC of train: %f' %(roc_auc_score(y_train, y_train_pre)))
 print('the AUC of test: %f' %(roc_auc_score(y_valid, y_valid_pre)))
-
