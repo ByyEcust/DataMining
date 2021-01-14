@@ -16,21 +16,20 @@ class DeepFM(nn.Module):
             nn.Linear(num_inputs, num_embedding),
             nn.BatchNorm1d(num_embedding),
             nn.ReLU())
-        self.hidden_layer = nn.Sequential(
+        self.NN_part = nn.Sequential(
             # hidden layer # 1
-            nn.Linear(num_inputs, hidden_size[0]),
+            nn.Linear(num_embedding, hidden_size[0]),
             nn.BatchNorm1d(hidden_size[0]),
             nn.Dropout(0.25),
             nn.ReLU(),
             # hidden layer # 2
-            nn.Linear(num_inputs, hidden_size[1]),
+            nn.Linear(hidden_size[0], hidden_size[1]),
             nn.BatchNorm1d(hidden_size[1]),
             nn.Dropout(0.25),
-            nn.ReLU())
-        self.output_layer = nn.Sequential(
-            nn.Linear(hidden_size[1]+num_embedding, num_outputs),
-            nn.Dropout(0.05),
-            nn.Sigmoid())
+            nn.ReLU(),
+            # output layer
+            nn.Linear(hidden_size[1], num_outputs),
+            nn.Dropout(0.05))
         self.__initialize_params()
 
     def forward(self, x):
@@ -39,13 +38,12 @@ class DeepFM(nn.Module):
         # Linear part
         linear_output = self.Linear_part(x)
         # FM part
-        fm_output = self.fm(embedding_vec)
+        fm_output = self.FM_part(x, self.Embedding[0].weight)
         # FNN part
-        fnn_output = self.hidden_layer(embedding_vec)
-        fnn_output = self.output_layer(fnn_output)
+        fnn_output = self.NN_part(embedding_vec)
         # y = Linear_part + FM_part + FNN_part
         output = linear_output + fm_output + fnn_output
-        return output
+        return torch.sigmoid(output.squeeze(1))
 
     def __initialize_params(self):
         for layer in self.parameters():
@@ -60,12 +58,11 @@ class DeepFM(nn.Module):
 
 
 # FM special version for DeepFM
-def _fm_layer(x):
-    square_of_sum = torch.sum(x, dim=1) ** 2
-    sum_of_square = torch.sum(x ** 2, dim=1)
-    cross_part = square_of_sum - sum_of_square
-    cross_part = 0.5 * cross_part.sum(1).unsqueeze(1)
-    return cross_part
+def _fm_layer(x, emb_vec):
+    cross_part_1 = torch.pow(torch.mm(x, emb_vec.t()), 2)
+    cross_part_2 = torch.mm(torch.pow(x, 2), torch.pow(emb_vec.t(), 2))
+    output = 0.5 * (cross_part_1 - cross_part_2).sum(1).unsqueeze(1)
+    return output
 
 
 

@@ -2,10 +2,6 @@
 This is a test file and a quick start of LR & FM  based on pytorch
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2021.01.06
 """
-
-
-import numpy as np
-import pandas as pd
 import torch.nn as nn
 from src.model_source.FM import LR, FM, FNN
 from sklearn import datasets
