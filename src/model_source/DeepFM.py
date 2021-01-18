@@ -10,7 +10,7 @@ import torch.nn as nn
 class DeepFM(nn.Module):
     def __init__(self, num_inputs, num_outputs, num_embedding, hidden_size=(512, 512)):
         super(DeepFM, self).__init__()
-        self.Linear_part = nn.Linear(num_inputs, 1)
+        self.Linear_part = nn.Linear(num_inputs, num_outputs)
         self.FM_part = _fm_layer
         self.Embedding = nn.Sequential(
             nn.Linear(num_inputs, num_embedding),
@@ -43,6 +43,63 @@ class DeepFM(nn.Module):
         fnn_output = self.NN_part(embedding_vec)
         # y = Linear_part + FM_part + FNN_part
         output = linear_output + fm_output + fnn_output
+        return torch.sigmoid(output.squeeze(1))
+
+    def __initialize_params(self):
+        for layer in self.parameters():
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight)
+                nn.init.constant_(layer.bias, 0.)
+            elif isinstance(layer, nn.BatchNorm1d):
+                nn.init.constant_(layer.weight, 1.)
+                nn.init.constant_(layer.bias, 0.)
+                nn.init.constant_(layer.running_mean, 0.)
+                nn.init.constant_(layer.running_var, 1.)
+
+
+# basic Multi-input DeepFM model built by pyTorch (Single field of inputs and 2 hidden layers)
+class MultiInputDeepFM(nn.Module):
+    def __init__(self, num_field_1, num_field_2, num_outputs, num_embedding, hidden_size=(512, 512)):
+        super(MultiInputDeepFM, self).__init__()
+        self.Linear_part = nn.Linear(num_field_1+num_field_2, num_outputs)
+        self.FM_part = _fm_layer
+        self.Embedding_1 = nn.Sequential(
+            nn.Linear(num_field_1, num_embedding),
+            nn.BatchNorm1d(num_embedding),
+            nn.ReLU())
+        self.Embedding_2 = nn.Sequential(
+            nn.Linear(num_field_2, num_embedding),
+            nn.BatchNorm1d(num_embedding),
+            nn.ReLU())
+        self.NN_part = nn.Sequential(
+            # hidden layer # 1
+            nn.Linear(num_embedding*2, hidden_size[0]),
+            nn.BatchNorm1d(hidden_size[0]),
+            nn.Dropout(0.25),
+            nn.ReLU(),
+            # hidden layer # 2
+            nn.Linear(hidden_size[0], hidden_size[1]),
+            nn.BatchNorm1d(hidden_size[1]),
+            nn.Dropout(0.25),
+            nn.ReLU(),
+            # output layer
+            nn.Linear(hidden_size[1], num_outputs),
+            nn.Dropout(0.05))
+        self.__initialize_params()
+
+    def forward(self, x_field_1, x_field_2):
+        # embedding layer
+        embedding_field_1 = self.Embedding_1(x_field_1)
+        embedding_field_2 = self.Embedding_2(x_field_2)
+        # Linear part
+        linear_output = self.Linear_part(torch.cat((x_field_1, x_field_2), dim=1))
+        # FM part
+        fm_output_field_1 = self.FM_part(x_field_1, self.Embedding_1[0].weight)
+        fm_output_field_2 = self.FM_part(x_field_2, self.Embedding_2[0].weight)
+        # FNN part
+        fnn_output = self.NN_part(torch.cat((embedding_field_1, embedding_field_2), dim=1))
+        # y = Linear_part + FM_part + FNN_part
+        output = linear_output + fm_output_field_1 + fm_output_field_2 + fnn_output
         return torch.sigmoid(output.squeeze(1))
 
     def __initialize_params(self):
