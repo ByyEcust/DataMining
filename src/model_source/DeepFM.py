@@ -1,5 +1,5 @@
 """
-DeepFM model based on pyTorch
+Deep Factorization machine (DeepFM) model based on pyTorch
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2020.01.14
 """
 import torch

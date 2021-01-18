@@ -1,5 +1,5 @@
 """
-Logistic regression (LR), Factorization machine (FM) and Field-aware FM (FFM)
+Logistic regression (LR), Factorization machine (FM)
 Author: Ruoqiu Zhang (Ecustwaterman, waterteam), 2021.01.05
 """
 
@@ -13,9 +13,9 @@ import torch.utils.data
 
 # the basic LR model built by pyTorch
 class LR(nn.Module):
-    def __init__(self, dim_features):
+    def __init__(self, dim_features, dim_outputs):
         super(LR, self).__init__()
-        self.linear_weight = nn.Linear(dim_features, 1, bias=True)
+        self.linear_weight = nn.Linear(dim_features, dim_outputs, bias=True)
         self.__initialize_params()
 
     def forward(self, x):
@@ -31,9 +31,9 @@ class LR(nn.Module):
 
 # the basic FM model built by pyTorch
 class FM(nn.Module):
-    def __init__(self, dim_features, dim_embedding):
+    def __init__(self, dim_features, dim_outputs, dim_embedding):
         super(FM, self).__init__()
-        self.linear_weight = nn.Linear(dim_features, 1, bias=True)
+        self.linear_weight = nn.Linear(dim_features, dim_outputs, bias=True)
         self.embedding_vec = nn.Parameter(torch.randn(dim_features, dim_embedding))
         self.__initialize_params()
 
