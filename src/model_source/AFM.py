@@ -13,10 +13,7 @@ class AFM(nn.Module):
         # Linear part x*w
         self.linear_weight = nn.Linear(dim_features, dim_outputs, bias=True)
         # embedding part
-        self.embedding_layer = nn.Sequential(
-            nn.Linear(dim_features, dim_embedding),
-            nn.BatchNorm1d(dim_embedding),
-            nn.ReLU())
+        self.embedding_vec = nn.Parameter(torch.randn(dim_features, dim_embedding))
         # attention network
         self.attention_layer = nn.Sequential(
             nn.Linear(dim_embedding, attention_size),  # attention layer
@@ -30,14 +27,14 @@ class AFM(nn.Module):
         self.__initialize_params()
 
     def forward(self, x):
-        rows, cols = self.__cross_term_generation(x.shape[1])
-        inner_product = x[:, rows] * x[:, cols]  # get inner product of each pair of features
-        embedding_vec = self.embedding_layer(x)  # embedding
-        attention_scores = self.attention(embedding_vec)  # get attention scores
-        attention_outputs = (attention_scores * inner_product).sum(1).unsqueeze(1)  # aij * (vi*vj) * xi*xj
-        attention_outputs = nn.functional.dropout(attention_outputs, p=self.dropouts[1], training=self.training)
-        outputs = torch.sigmoid(self.linear_weight(x) + self.fc(attention_outputs))  # linear_part + cross_part
-        return outputs
+        inner_product = self.__cross_term_generation(x)  # (batch_size * m(m-1)/2 * dim_emb)
+        attention_score = self.attention_layer(inner_product)  # (batch_size * m(m-1)/2 * 1)
+        attention_out = torch.sum(attention_score * inner_product, dim=1) # (batch_size * dim_emb)
+        attention_out = nn.functional.dropout(attention_out, p=self.dropouts[1], training=self.training)
+        cross_term_out = self.fc(attention_out)
+        linear_term_out = self.linear_weight(x)
+        output = torch.sigmoid(linear_term_out+cross_term_out)
+        return output.squeeze(1)
 
     def __initialize_params(self):
         for layer in self.parameters():
@@ -50,14 +47,18 @@ class AFM(nn.Module):
                 nn.init.constant_(layer.running_mean, 0.)
                 nn.init.constant_(layer.running_var, 1.)
 
-    @staticmethod
-    def __cross_term_generation(dim_features):
-        rows, cols = [], []
+    def __cross_term_generation(self, x):
+        dim_features, dim_embedding = x.shape[1], self.embedding_vec.shape[1]
+        num_cross_term = int(dim_features*(dim_features-1)/2)
+        inner_product = torch.empty((x.shape[0], num_cross_term, dim_embedding))
+        count = 0
         for i in range(dim_features-1):
-            for j in range(1, dim_features):
-                rows.append(i)
-                cols.append(j)
-        return rows, cols
-
-
-
+            # xi * vi
+            p = torch.mm(x[:, i].view(-1, 1), self.embedding_vec[i, :].view(1, -1))
+            for j in range(i+1, dim_features):
+                # xj * vj
+                q = torch.mm(x[:, j].view(-1, 1), self.embedding_vec[j, :].view(1, -1))
+                # (vi * vj) xi * xj
+                inner_product[:, count, :] = p * q
+                count += 1
+        return inner_product
