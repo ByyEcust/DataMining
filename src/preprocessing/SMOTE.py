@@ -11,20 +11,19 @@ from sklearn.neighbors import NearestNeighbors
 
 
 class SMOTE(object):
-    def __init__(self, num_generation=10, random_state=2020):
+    def __init__(self, num_generation=10):
         """
         :param num_generation:  the number of generated pos-samples
         :param random_state:    random seed
         """
         self.num_generation = num_generation
-        self.random_state = 2020
 
-    def fit(self, X):
+    def fit(self, X, verbose=10):
         """
-        :param X:   pos-samples (numpy array-like)
-        :return:    generated samples (numpy array-like)
+        :param verbose:     num of verbose to print (int)
+        :param X:           pos-samples (numpy array-like)
+        :return:            generated samples (numpy array-like)
         """
-        np.random.seed(self.random_state)
         self.X_idx = list(range(X.shape[0]))
         self.__calculate_neighbors(X)
         X_generation = np.zeros((self.num_generation, X.shape[1]))
@@ -35,7 +34,7 @@ class SMOTE(object):
             x_neighbor = X[neighbor_idx, :]
             x_generation = self.__sample_generation(x, x_neighbor)
             X_generation[i, :] = x_generation
-            if not i % 10:
+            if not i % verbose:
                 print('the number of generated samples is %d' % i)
         return X_generation
 
