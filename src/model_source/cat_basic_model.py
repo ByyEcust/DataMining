@@ -15,10 +15,10 @@ Author: Ruoqiu Zhang (ECUSTwaterman, waterteam), 2020.12.02
 '''
 
 import pandas as pd
-import catboost as cat
 from catboost import CatBoost
 
-class LgbBasicModel(object):
+
+class CatBasicModel(object):
     def __init__(self, objective, features,
                  n_estimators=100,
                  num_leaves=32,
